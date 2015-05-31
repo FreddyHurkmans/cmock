@@ -21,7 +21,7 @@ Details about these functions will be explained later on.
 Requires Python and ctags to run, the generated code requires the [Unity testing framework](https://github.com/ThrowTheSwitch/Unity).
 
 ### Tested on
-I tested cMock on Ubuntu 14.04 with Python 2.7.6 and ctags 5.9, however since -as far as I know- I didn't use any special Python stuff it should work just fine on other version.
+I tested cMock on Ubuntu 14.04 with Python 2.7.6 and ctags 5.9, however since -as far as I know- I didn't use any special Python stuff it should work just fine on other versions.
 
 ctags is called with parameters -x, -u and --c-kinds=fp, so as long as your version has these options you're good to go.
 

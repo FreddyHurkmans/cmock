@@ -295,11 +295,12 @@ class HeaderGenerator(FileGenerator):
         for mock in mockinfo:
             self.file.write('typedef struct\n')
             self.file.write('{\n')
-            self.file.write('    /* parameters */\n')
+            if not (len(mock.parameters) == 1 and mock.parameters[0].type.strip() == 'void'):
+                self.file.write('    /* parameters */\n')
             for parameter in mock.parameters:
                 self.writeParameterInfoToStruct(parameter)
-            self.file.write('    /* return value */\n')
             if mock.returnType != 'void':
+                self.file.write('    /* return value */\n')
                 self.file.write('    ' + self.removeConstFromType(mock.returnType) + ' ReturnValue[MAX_NR_FUNCTION_CALLS];\n')
             self.file.write('    /* administration */\n')
             self.file.write('    int CallCounter;\n')
@@ -456,10 +457,9 @@ class SourceGenerator(FileGenerator):
                     else:
                         unityTesttype = self.findUnityTestType(parameter.type)
                         if unityTesttype == None:
-                            printerror(['cMock error: unknown c type: "', parameter.type, '"" while working on function ' + mock.functionName + '.\n',
-                                        'Please add all your required types to the CTYPE_TO_ASSERT_MACRO at the top of ' + sys.argv[0] + '\n',
-                                        'to guarantee correct mock generation.'])
-                        self.file.write('    ' + unityTesttype + '(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter], ' + parameter.name + ', errormsg);\n')
+                            self.file.write('    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter]), &' + parameter.name + ', sizeof(' + parameter.name + '), errormsg);\n')
+                        else:
+                            self.file.write('    ' + unityTesttype + '(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter], ' + parameter.name + ', errormsg);\n')
 
     def findUnityTestType(self, paramType):
         global CTYPE_TO_UNITY_ASSERT_MACRO
