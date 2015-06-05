@@ -356,7 +356,7 @@ class SourceGenerator(FileGenerator):
     def writeDefinesAndGlobalVarsToSourceFile(self, mockinfo):
         self.file.write('#define MAX_LENGTH_ERROR_MESSAGE 100\n\n')
         for mock in mockinfo:
-            self.file.write(mock.functionName + 'Struct ' + mock.functionName + 'Data;\n')
+            self.file.write('static ' + mock.functionName + 'Struct ' + mock.functionName + 'Data;\n')
         self.file.write('\n')
 
     def writeSetupAndTearDownToSourceFile(self, mockinfo):
