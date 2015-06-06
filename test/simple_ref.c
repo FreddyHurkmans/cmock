@@ -166,6 +166,3 @@ int constPtrs(const int* p1, const int *p2, int const* p3, int const *p4)
     TEST_ASSERT_EQUAL_INT_MESSAGE(constPtrsData.p4[constPtrsData.CallCounter], *p4, errormsg);
     return constPtrsData.ReturnValue[constPtrsData.CallCounter++];
 }
-
-
-

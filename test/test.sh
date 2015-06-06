@@ -24,14 +24,14 @@ do
     diff $base$REF_H $base$MOCK_H_OUT > $TEMPFILE
     if [ $? -ne 0 ]
     then
-        echo "error in headerfile for $file:"
+        echo "error in $base$MOCK_H_OUT:"
         cat $TEMPFILE
         error=1
     fi
     diff $base$REF_C $base$MOCK_C_OUT > $TEMPFILE
     if [ $? -ne 0 ]
     then
-        echo "error in sourcefile for $file:"
+        echo "error in $base$MOCK_C_OUT:"
         cat $TEMPFILE
         error=1
     fi

@@ -76,4 +76,3 @@ void bas_ExpectedCall(uint8_t v1, int16_t v2, const int32_t* p1, uint_16_t Retur
 void constPtrs_ExpectedCall(const int* p1, const int *p2, int const* p3, int const *p4, int ReturnValue);
 
 #endif  /* __SIMPLE_MOCK_H */
-

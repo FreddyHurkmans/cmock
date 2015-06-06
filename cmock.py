@@ -167,7 +167,7 @@ class FileWriter(object):
 
     def writeFooter(self):
         if self.filename[-2:] == '.h':
-            self.fd.write('\n#endif  /* ' + self.headerProtectionDefine() + ' */\n')
+            self.fd.write('\n\n#endif  /* ' + self.headerProtectionDefine() + ' */')
         self.fd.write('\n')  
 
     def write(self, line):
@@ -323,9 +323,9 @@ class HeaderGenerator(FileGenerator):
         self.headerfile = self.headerfile[:self.headerfile.rfind('.')]
         self.file.write('void ' + self.headerfile + '_MockSetup(void);    /* call this before every test! */\n')
         self.file.write('void ' + self.headerfile + '_MockTeardown(void); /* call this after every test! */\n\n')
-        self.file.write('/* call these for each call you expect for a given function */\n')
+        self.file.write('/* call these for each call you expect for a given function */')
         for mock in mockinfo:
-            prototype = self.makePrototype(mock) + ';\n'
+            prototype = '\n' + self.makePrototype(mock) + ';'
             self.file.write(prototype)
 
 
@@ -375,10 +375,10 @@ class SourceGenerator(FileGenerator):
             assertline += '                              ' + mock.functionName + 'Data.CallCounter,\n'
             assertline += '                              "' + mock.functionName + ' was not called as often as specified!");\n'
             self.file.write(assertline)
-        self.file.write('}\n\n\n')
+        self.file.write('}')
 
     def writeExpectedCallFunction(self, mock):
-        prototype = self.makePrototype(mock) + '\n'
+        prototype = '\n\n\n' + self.makePrototype(mock) + '\n'
         self.file.write(prototype)
         self.file.write('{\n')
         self.file.write('    char errormsg[MAX_LENGTH_ERROR_MESSAGE];\n')
@@ -395,6 +395,8 @@ class SourceGenerator(FileGenerator):
         for parameter in mock.parameters:
             if parameter.type.find('*') >= 0:
                 self.file.write('    TEST_ASSERT_NOT_NULL_MESSAGE(' + parameter.name + ', "parameter should not be NULL");\n')
+        if mock.returnType.find('*') >= 0:
+            self.file.write('    /* no TEST_ASSERT_NOT_NULL for ReturnValue, you might want to return NULL! */\n')
 
     def writeParameterCopyLinesToSourceFile(self, mock):
         for parameter in mock.parameters:
@@ -430,7 +432,7 @@ class SourceGenerator(FileGenerator):
             self.file.write('    ' + mock.functionName + 'Data.CallCounter++;\n')
         else:
             self.file.write('    return ' + mock.functionName + 'Data.ReturnValue[' + mock.functionName + 'Data.CallCounter++];\n')
-        self.file.write('}\n\n\n')
+        self.file.write('}')
 
     def writeParameterLinesToMockFunction(self, mock):
         if not self.isVoidParameter(mock.parameters):
