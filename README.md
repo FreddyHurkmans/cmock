@@ -1,7 +1,7 @@
 # cMock
 
 ## Introduction
-Mock generator for C, version 0.2. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
+Mock generator for C, version 0.3. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
 
 Example: say your headerfile contains:
 
@@ -116,7 +116,7 @@ void myfuncs_MockSetup(void);    /* call this before every test! */
 void myfuncs_MockTeardown(void); /* call this after every test! */
 ```
 
-`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered as the constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in Unity: just call them from your custom `setUp` and `tearDown` functions.
+`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered as the constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in [Unity](https://github.com/ThrowTheSwitch/Unity): just call them from your custom `setUp` and `tearDown` functions.
 
 ```c
 /* call these for each call you expect for a given function */
@@ -230,14 +230,19 @@ int foo(char* character)
 
 void bar_ExpectedCall(const char* text, int ReturnValue)
 {
+    size_t length = 0;
     ...
-    strncpy(barData.text[barData.ExpectedNrCalls], text, MAX_STRING_LENGTH);
+    length = strlen(text);
+    barData.text[barData.ExpectedNrCalls] = malloc(length+1);
+    TEST_ASSERT_NOT_NULL_MESSAGE(barData.text[barData.ExpectedNrCalls], "could not allocate memory");
+    strcpy(barData.text[barData.ExpectedNrCalls], text);
     ...
 }
 int bar(const char* text)
 {
     ...
     TEST_ASSERT_EQUAL_STRING_MESSAGE(barData.text[barData.CallCounter], text, errormsg);
+    free(barData.text[barData.CallCounter]);
     ...
 }
 ```
