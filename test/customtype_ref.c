@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdlib.h>
 #include "unity.h"
 #include "customtype_mock.h"
 

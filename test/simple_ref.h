@@ -7,7 +7,6 @@
 #include "simple.h"
 
 #define MAX_NR_FUNCTION_CALLS 25
-#define MAX_STRING_LENGTH 200
 
 typedef struct
 {

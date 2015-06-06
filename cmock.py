@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 DESCRIPTION = 'Mock generator for c code'
-VERSION     = '0.2'
+VERSION     = '0.3'
 AUTHOR      = 'Freddy Hurkmans'
 LICENSE     = 'BSD 3-Clause'
 
@@ -14,8 +14,6 @@ LICENSE     = 'BSD 3-Clause'
 #   considered to be input strings
 # - pointer parameters (e.g. MYTYPE*) are considered to be output parameters, char* types are considered to be
 #   output chars, thus no string (remember: arrays are not supported!)
-# - strings currently have a maximum string length (hardcoded in MaxStringLength: 200), this will
-#   change to dynamically allocated memory in the next version
 #
 # for mock generation, this means that:
 # int foo(const MYTYPE* bar);
@@ -77,7 +75,6 @@ CTYPE_TO_UNITY_ASSERT_MACRO = [
 # set defaults for parameters
 Verbose = False
 MaxNrFunctionCalls = '25'
-MaxStringLength = '200'
 
 CTAGS_EXECUTABLE = 'ctags'
 UNITY_INCLUDE = '#include "unity.h"'
@@ -155,8 +152,7 @@ class FileWriter(object):
         self.fd.write('#define ' + defineName + '\n\n')
         self.writeSystemIncludes()
         self.fd.write('\n#include "' + self.sourcefilename + '"\n\n')
-        self.fd.write('#define MAX_NR_FUNCTION_CALLS ' + self.maxNrFunctionCalls + '\n')
-        self.fd.write('#define MAX_STRING_LENGTH ' + MaxStringLength + '\n\n')
+        self.fd.write('#define MAX_NR_FUNCTION_CALLS ' + self.maxNrFunctionCalls + '\n\n')
 
     def headerProtectionDefine(self):
         return '__' + self.filename.upper().replace('.', '_')
@@ -311,7 +307,7 @@ class HeaderGenerator(FileGenerator):
         if parameter.type.strip() != 'void':
             paramNoSpaces = parameter.type.replace(' ', '')
             if paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
-                self.file.write('    char ' + parameter.name + '[MAX_NR_FUNCTION_CALLS][MAX_STRING_LENGTH];\n')
+                self.file.write('    char* ' + parameter.name + '[MAX_NR_FUNCTION_CALLS];\n')
             else:
                 paramType = parameter.type.replace('const', '')
                 while paramType.find('  ') >= 0:
@@ -347,6 +343,7 @@ class SourceGenerator(FileGenerator):
         global UNITY_INCLUDE
         global CUSTOM_INCLUDES
         self.file.write('#include <string.h>\n')
+        self.file.write('#include <stdlib.h>\n')
         self.file.write(UNITY_INCLUDE + '\n')
         self.file.write('#include "' + self.file.createMockName('.h') + '"\n')
         for custom_include in CUSTOM_INCLUDES:
@@ -381,6 +378,8 @@ class SourceGenerator(FileGenerator):
         prototype = '\n\n\n' + self.makePrototype(mock) + '\n'
         self.file.write(prototype)
         self.file.write('{\n')
+        if self.stringParameterInFunction(mock):
+            self.file.write('    size_t length = 0;\n')
         self.file.write('    char errormsg[MAX_LENGTH_ERROR_MESSAGE];\n')
         self.file.write('    snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Too many calls to %s, max number is: %d", __FUNCTION__, MAX_NR_FUNCTION_CALLS);\n')
         self.file.write('    TEST_ASSERT_TRUE_MESSAGE(' + mock.functionName + 'Data.ExpectedNrCalls < MAX_NR_FUNCTION_CALLS, errormsg);\n')
@@ -390,6 +389,13 @@ class SourceGenerator(FileGenerator):
         self.writeReturnTypeCopyLinesToSourceFile(mock)
         self.file.write('    ' + mock.functionName + 'Data.ExpectedNrCalls++;\n')
         self.file.write('}\n\n')
+
+    def stringParameterInFunction(self, mock):
+        for parameter in mock.parameters:
+            paramNoSpaces = parameter.type.replace(' ', '')
+            if paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
+                return True
+        return False
 
     def writeNullTestsToSourceFile(self, mock):
         for parameter in mock.parameters:
@@ -403,7 +409,10 @@ class SourceGenerator(FileGenerator):
             paramNoSpaces = parameter.type.replace(' ', '')
             paramNoConst = self.removeConstFromType(parameter.type)
             if paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
-                self.file.write('    strncpy(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.ExpectedNrCalls], ' + parameter.name + ', MAX_STRING_LENGTH);\n')
+                self.file.write('    length = strlen(' + parameter.name + ');\n');
+                self.file.write('    ' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.ExpectedNrCalls] = malloc(length+1);\n')
+                self.file.write('    TEST_ASSERT_NOT_NULL_MESSAGE(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.ExpectedNrCalls], "could not allocate memory");\n')
+                self.file.write('    strcpy(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.ExpectedNrCalls], ' + parameter.name + ');\n')
             elif paramNoConst.find('*') >= 0:
                 self.file.write('    ' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.ExpectedNrCalls] = *' + parameter.name + ';\n')
             elif paramNoConst.strip() != 'void':
@@ -449,6 +458,7 @@ class SourceGenerator(FileGenerator):
                     paramNoSpaces = parameter.type.replace(' ', '')
                     if paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
                         self.file.write('    TEST_ASSERT_EQUAL_STRING_MESSAGE(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter], ' + parameter.name + ', errormsg);\n')
+                        self.file.write('    free(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter]);\n')
                     elif parameter.type.find('*') >= 0:
                         typeWithoutConstOrPtr = parameter.type.replace('const', '').replace('*', '').strip()
                         unityTesttype = self.findUnityTestType(typeWithoutConstOrPtr)
