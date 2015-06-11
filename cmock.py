@@ -112,7 +112,7 @@ def printerror(lineparts):
 
 class FileWriter(object):
     def __init__(self, sourcefilename, extension, maxNrFunctionCalls):
-        self.sourcefilename = self.getBasename(sourcefilename)
+        self.sourcefilename = sourcefilename
         self.filename = self.createMockName(extension)
         self.maxNrFunctionCalls = maxNrFunctionCalls
         self.fd = open(self.filename, 'w')
@@ -121,10 +121,6 @@ class FileWriter(object):
     def __del__(self):
         self.writeFooter()
         self.fd.close()
-
-    def getBasename(self, path):
-        path = path.replace('\\', '/').rstrip('/')
-        return path[path.rfind('/')+1:]
 
     def createMockName(self, extension):
         return self.sourcefilename[:self.sourcefilename.rfind('.')] + '_mock' + extension
@@ -245,8 +241,12 @@ class Prototypes(object):
 
 class FileGenerator(object):
     def __init__(self, headerfile, kind, maxNrFunctionCalls):
-        self.headerfile = headerfile
-        self.file = FileWriter(headerfile, kind, maxNrFunctionCalls)
+        self.headerfile = self.getBasename(headerfile)
+        self.file = FileWriter(self.headerfile, kind, maxNrFunctionCalls)
+
+    def getBasename(self, path):
+        path = path.replace('\\', '/').rstrip('/')
+        return path[path.rfind('/')+1:]
 
     def removeConstFromType(self, ctype):
         ctype = ctype.replace('const', '').strip()

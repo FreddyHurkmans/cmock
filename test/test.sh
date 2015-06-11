@@ -1,7 +1,6 @@
 #!/bin/bash
 
 CMOCK='../cmock.py'
-FILES=`find . ! -name '*_*' -name '*.h'`
 
 REF_H="_ref.h"
 REF_C="_ref.c"
@@ -11,13 +10,13 @@ MOCK_H_OUT="_mock_out.h"
 MOCK_C_OUT="_mock_out.c"
 TEMPFILE="mock.out"
 
-for file in $FILES
-do
-  if [[ $file != *"_"* ]]
-  then
+function GenerationTest {
+    slash='/'
+    path=$1$slash
+    file=$path$2
+    base=$path$3
     error=0
-    file=$(basename $file)
-    base=$(basename $file .h)
+
     $CMOCK $file
     tail -n+11 $base$MOCK_H > $base$MOCK_H_OUT
     tail -n+11 $base$MOCK_C > $base$MOCK_C_OUT
@@ -39,8 +38,17 @@ do
     then
         rm $TEMPFILE $base$MOCK_H $base$MOCK_C $base$MOCK_H_OUT $base$MOCK_C_OUT
     fi
-  fi
+}
+
+# files in current directory
+FILES=`find . -maxdepth 1 ! -name '*_*' -name '*.h'`
+for file in $FILES
+do
+    if [[ $file != *"_"* ]]
+    then
+        path=$(dirname $file)
+        file=$(basename $file)
+        base=$(basename $file .h)
+        GenerationTest $path $file $base
+    fi
 done
-
-
-#rm *_mock.[ch]
