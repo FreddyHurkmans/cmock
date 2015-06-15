@@ -1,7 +1,7 @@
 # cMock
 
 ## Introduction
-Mock generator for C, version 0.3. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
+Mock generator for C, version 0.4. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
 
 Example: say your headerfile contains:
 
@@ -18,7 +18,7 @@ int foo(double a)
 Details about these functions will be explained later on.
 
 ### Requires
-Requires Python and ctags to run, the generated code requires the [Unity testing framework](https://github.com/ThrowTheSwitch/Unity).
+cMock requires Python and ctags to run, the generated code requires the [Unity testing framework](https://github.com/ThrowTheSwitch/Unity).
 
 ### Tested on
 I tested cMock on Ubuntu 14.04 with Python 2.7.6 and ctags 5.9, however since -as far as I know- I didn't use any special Python stuff it should work just fine on other versions.
@@ -26,7 +26,19 @@ I tested cMock on Ubuntu 14.04 with Python 2.7.6 and ctags 5.9, however since -a
 ctags is called with parameters -x, -u and --c-kinds=fp, so as long as your version has these options you're good to go.
 
 ### Limitations
-The current version does handle all standard c types, your own types, structs and single pointers pretty well. Double pointers, function pointer parameters and arrays are not yet supported.
+This version supports the following stuff very well, meaning they should work as parameter and return type of any function you know:
+
+- all standard c types
+- your own types
+- structs
+- single pointers
+
+Function pointers work well with the following limitations:
+
+- you cannot have a function pointer as return type (yet)
+- you cannot typedef your function pointer parameter (see the chapter about function pointers)
+
+Double pointers and arrays are not yet supported.
 
 ## How it works: the basics
 You simply call `./cmock.py myfuncs.h` on the commandline. cMock will then generate both `myfuncs_mock.c` and `myfuncs_mock.h` for you.
@@ -55,11 +67,11 @@ Now, let's take a look at each part of the generated header file:
 ```c
 /*********************************************************************
  * generated code, please do not edit directly
- * cMock version 0.2 written by Freddy Hurkmans
+ * cMock version 0.4 written by Freddy Hurkmans
  *
  * source file    : myfuncs.h
  * filename       : myfuncs_mock.h
- * generation date: 30 May 2015 - 18:09:04
+ * generation date: 14 Jun 2015 - 22:40:15
  *
  ********************************************************************/
 
@@ -76,9 +88,8 @@ The generated file starts with a header that indicates this is a generated file;
 
 ```c
 #define MAX_NR_FUNCTION_CALLS 25
-#define MAX_STRING_LENGTH 200
 ```
-Next part creates two defines: one that is used to declare a number of expected function calls *(this can be modified easily by adding the option* `-n#` *to the commandline)*. The other is a quick fix for this first version: it defines the maximum size of a string that's given as an imput parameter. In a later version this will be made dynamically.
+Next part creates a define: one that is used to declare a number of expected function calls *(this can easily be modified by adding the option* `-n#` *to the commandline)*.
 
 ```c
 typedef struct
@@ -109,14 +120,14 @@ typedef struct
 } basStruct;
 ```
 
-As our mock code needs to remember expected calls, their parameters and return values, we need some place to put all this information. In order to do this in a structured way, a struct is created for each function in your headerfile. This struct is called: `<your_function>Struct`. In here you will find an array for each parameter, an array for your return value, a counter for how often the generated function is called and a counter for how often it is expected to be called. *Please note that parameters and return types are only generated if the function in question has them!*
+As our mock code needs to remember expected calls, their parameters and return values, we need some place to put all this information. In order to do this in a structured way, a struct is created for each function in your headerfile. This struct is called: `<your_function>Struct`. In here you will find an array for each parameter, an array for your return value, a counter for how often the generated function is called and a counter for how often it is expected to be called. *Please note that parameters and return types are only generated if the function in question has them!* The details about these variables are not really important for you, I just mention them so you understand how the mock works.
 
 ```c
 void myfuncs_MockSetup(void);    /* call this before every test! */
 void myfuncs_MockTeardown(void); /* call this after every test! */
 ```
 
-`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered as the constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in [Unity](https://github.com/ThrowTheSwitch/Unity): just call them from your custom `setUp` and `tearDown` functions.
+`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in [Unity](https://github.com/ThrowTheSwitch/Unity): just call them from your custom `setUp` and `tearDown` functions.
 
 ```c
 /* call these for each call you expect for a given function */
@@ -134,7 +145,7 @@ foo_ExpectedCall(12, -1);
 
 `foo_ExpectedCall` will remember the given values and it will increase the `ExpectedNrCalls` counter. When our function under test calls `foo`, it will test if the expected input parameter is given and it will return the given return value. `foo` will also test if it is not called too often.
 
-Testing if all expected functions are called enough cannot be done until the test is completely done. This is where `myfuncs_MockTeardown` comes in: it will test if all functions are called the expected number of times.
+Testing if all expected functions are called the specified amount of times cannot be done until the test is completely done. This is where `myfuncs_MockTeardown` comes in: it will test exactly that.
 
 ## More advanced
 The previous chapter explains the basics of the generated mock. Without going into all details, there's a bit more you might need to know before you start using this mock generator. The 'bit more' part is mostly about pointers.
@@ -246,6 +257,43 @@ int bar(const char* text)
     ...
 }
 ```
+
+### Function pointers
+As from version 0.4 function pointers are supported. However, in `C` you basically have 2 ways of implementing a function that takes a function pointer as a parameter:
+
+```c
+int timer(int time, void (*callback)(int id));
+```
+
+and:
+
+```c
+typedef void (*callbackType)(int id);
+int timer(int time, callbackType callback);
+```
+
+As cMock doesn't really parse `C` files, but rather uses ctags to extract prototypes, it cannot see what callbackType is. At this time, only the first option (without the typedef) is supported. If you however depend on the second version, I suggest running your header through any `C` preprocessor before feeding it to cMock. I have not yet tested this, I will do this in a later version.
+
+Back to the first option. The generated `ExpectedCall` function looks like:
+
+```c
+void timer_ExpectedCall(int time, void (*callback)(int id), int ReturnValue); /* if you don't want to check function pointer(s), make it NULL */
+```
+
+The comment at the end of the line hints to 2 different ways of using your mock. As you might expect from what you've seen so far, the first way is like this:
+
+```c
+timer_ExpectedCall(10, my_callback_function);
+```
+
+This will tell the mock to expect 1 call to `timer()` with parameters `10` and `my_callback_function`. However, quite often you will find that callback functions given to functions are static functions, thus unavailable in your test file. In this case you can simply call the `ExpectedCall` with a `NULL` parameter:
+
+```c
+timer_ExpectedCall(10, NULL);
+```
+
+This will tell the mock timer function not to test the callback parameter.
+
 ## That be it :)
 I wish you lots of coding fun, where the tedious old making of stub code is finally part of the past.
 

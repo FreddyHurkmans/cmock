@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 DESCRIPTION = 'Mock generator for c code'
-VERSION     = '0.3'
+VERSION     = '0.4'
 AUTHOR      = 'Freddy Hurkmans'
 LICENSE     = 'BSD 3-Clause'
 
@@ -110,6 +110,108 @@ def printerror(lineparts):
 ################### CLASSES ####################################################
 ################################################################################
 
+class MockInfoStruct:
+    # MockInfo is used as a struct, it will contain:
+    # field          type
+    # ------------------------
+    # .functionName  string
+    # .returnType    string
+    # .funcptr       bool (returntype is funcptr)
+    # .parameters    list of ParamInfo
+    pass
+
+class ParamInfoStruct:
+    # ParamInfo is used as a struct, it will contain:
+    # field          type
+    # ------------------------
+    # .original      string
+    # .type          string
+    # .name          string
+    # .funcptr       bool
+    pass
+
+
+################################################################################
+
+class Prototypes(object):
+    def __init__(self, headerfile):
+        self.headerfile = headerfile
+        self.getPrototypesUsingCtags()
+   
+    def getPrototypesUsingCtags(self):
+        global CTAGS_EXECUTABLE
+        self.ctagsOutput = subprocess.check_output([CTAGS_EXECUTABLE, '-x', '-u', '--c-kinds=fp', self.headerfile])
+        self.ctagsOutput = self.ctagsOutput.split('\n')
+        self.ctagsOutput = self.ctagsOutput[:-1]
+
+    def anyPrototypesFound(self):
+        return len(self.ctagsOutput) > 0
+
+    def getMockInfo(self):
+        mockinfo = []
+        for prototype in self.ctagsOutput:
+            prototype = prototype[prototype.find(self.headerfile) + len(self.headerfile) + 1:].strip()
+            prototype = self.removeExternKeyword(prototype)
+            leftPart = prototype[:prototype.find('(')]
+            
+            mock = MockInfoStruct()
+            (mock.functionName, mock.returnType, mock.funcptr) = self.splitParameterTypeAndName(leftPart)
+            parameterList = self.splitParameterList(prototype)
+            mock.parameters = []
+            for parameter in parameterList:
+                paraminfo = ParamInfoStruct()
+                paraminfo.original = parameter.strip()
+                (paraminfo.name, paraminfo.type, paraminfo.funcptr) = self.splitParameterTypeAndName(paraminfo.original)
+                mock.parameters.append(paraminfo)
+            mockinfo.append(mock)
+        return mockinfo
+
+    def removeExternKeyword(self, prototype):
+        if prototype.find('extern') == 0:
+            prototype = prototype[6:].strip()
+        return prototype
+
+    def splitParameterTypeAndName(self, parameter):
+        funcPtr = False
+        if parameter.strip() == 'void':
+            paramName = ''
+            paramType = 'void'
+        elif parameter.find('(') >= 0:
+            # function pointer
+            funcPtr = True
+            # int **(*callback)(int** p)
+            paramName = parameter[parameter.find('(')+1:parameter.find(')')].strip('*')
+            paramType = ''
+        else:
+            lastSpace = parameter.rfind(' ')
+            lastStar = parameter.rfind('*')
+            paramName = parameter[max(lastSpace, lastStar)+1:].strip()
+            paramType = parameter[:parameter.rfind(paramName)].strip()
+        return [paramName, paramType, funcPtr]
+
+    def splitParameterList(self, prototype):
+        prototype = prototype[prototype.find('(')+1:prototype.rfind(')')].strip()
+        parameterList = []
+        functionPointer = '' # builds functionpointer parameter, can be split over multiple parameters due to split on comma!
+        functionPointerBracketCount = 0 # remembers the number of brackets in functionptr that are still open (should become 0 at end of functionptr)
+        for parameter in prototype.split(','):
+            if functionPointerBracketCount == 0 and parameter.count('(') == 0:
+                # no function pointer
+                parameterList.append(parameter)
+            else:
+                # part of function pointer
+                functionPointerBracketCount += parameter.count('(') - parameter.count(')')
+                functionPointer += parameter + ','
+                if functionPointerBracketCount == 0:
+                    parameterList.append(functionPointer[:-1])
+                    functionPointer = ''
+        return parameterList
+
+        parameterList = prototype.split(',')
+        return parameterList
+
+################################################################################
+
 class FileWriter(object):
     def __init__(self, sourcefilename, extension, maxNrFunctionCalls):
         self.sourcefilename = sourcefilename
@@ -167,78 +269,6 @@ class FileWriter(object):
 
 ################################################################################
 
-class MockInfo:
-    # MockInfo is used as a struct, it will contain:
-    # field          type
-    # ------------------------
-    # .functionName  string
-    # .returnType    string
-    # .parameters    list of ParamInfo
-    pass
-
-class ParamInfo:
-    # ParamInfo is used as a struct, it will contain:
-    # field          type
-    # ------------------------
-    # .original      string
-    # .type          string
-    # .name          string
-    pass
-
-
-################################################################################
-
-class Prototypes(object):
-    def __init__(self, headerfile):
-        self.headerfile = headerfile
-        self.getPrototypesUsingCtags()
-   
-    def getPrototypesUsingCtags(self):
-        global CTAGS_EXECUTABLE
-        self.ctagsOutput = subprocess.check_output([CTAGS_EXECUTABLE, '-x', '-u', '--c-kinds=fp', self.headerfile])
-        self.ctagsOutput = self.ctagsOutput.split('\n')
-        self.ctagsOutput = self.ctagsOutput[:-1]
-
-    def anyPrototypesFound(self):
-        return len(self.ctagsOutput) > 0
-
-    def getMockInfo(self):
-        mockinfo = []
-        for prototype in self.ctagsOutput:
-            prototype = prototype[prototype.find(self.headerfile) + len(self.headerfile) + 1:].strip()
-            prototype = self.removeExternKeyword(prototype)
-            leftPart = prototype[:prototype.find('(')]
-
-            mock = MockInfo()
-            (mock.functionName, mock.returnType) = self.splitParameterTypeAndName(leftPart)
-            mock.parameters = []
-            for parameter in prototype[prototype.find('(')+1:prototype.find(')')].strip().split(','):
-                paraminfo = ParamInfo()
-                paraminfo.original = parameter.strip()
-                (paraminfo.name, paraminfo.type) = self.splitParameterTypeAndName(paraminfo.original)
-                mock.parameters.append(paraminfo)
-            mockinfo.append(mock)
-        return mockinfo
-
-    def removeExternKeyword(self, prototype):
-        if prototype.find('extern') == 0:
-            prototype = prototype[6:].strip()
-        return prototype
-
-    def splitParameterTypeAndName(self, parameter):
-        if parameter.strip() == 'void':
-            paramName = ''
-            paramType = 'void'
-        else:
-            lastSpace = parameter.rfind(' ')
-            lastStar = parameter.rfind('*')
-            paramName = parameter[max(lastSpace, lastStar)+1:].strip()
-            paramType = parameter[:parameter.rfind(paramName)].strip()
-        return [paramName, paramType]
-
-
-################################################################################
-
 class FileGenerator(object):
     def __init__(self, headerfile, kind, maxNrFunctionCalls):
         self.headerfile = self.getBasename(headerfile)
@@ -254,15 +284,18 @@ class FileGenerator(object):
             ctype = ctype.replace('  ', ' ')
         return ctype
 
-    def makePrototype(self, mock):
+    def makePrototype(self, mock, lineEnding):
         prototype = 'void ' + mock.functionName + '_ExpectedCall('
         # parameters
+        funcptrParameterFound = False;
         if (self.isVoidParameter(mock.parameters)) and (mock.returnType == 'void'):
             prototype += 'void'
         elif (not self.isVoidParameter(mock.parameters)):
             for parameter in mock.parameters:
+                if parameter.funcptr:
+                    funcptrParameterFound = True
                 param = parameter.original
-                if (param.find('*') >= 0) and (param.find('const') < 0):
+                if (not parameter.funcptr) and (param.find('*') >= 0) and (param.find('const') < 0):
                     param = 'const ' + param
                 prototype += param + ', '
         # return value
@@ -271,7 +304,11 @@ class FileGenerator(object):
         # strip last ', '
         if prototype[-2:] == ', ':
             prototype = prototype[:-2]
-        return prototype + ')'
+
+        prototype += ')' + lineEnding
+        if funcptrParameterFound:
+            prototype += ' /* if you don\'t want to check function pointer(s), make it NULL */'
+        return prototype
 
     def isVoidParameter(self, parameterlist):
         return (len(parameterlist) == 1) and (parameterlist[0].type == 'void')
@@ -306,7 +343,10 @@ class HeaderGenerator(FileGenerator):
     def writeParameterInfoToStruct(self, parameter):
         if parameter.type.strip() != 'void':
             paramNoSpaces = parameter.type.replace(' ', '')
-            if paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
+            if parameter.funcptr:
+                temp = parameter.original.replace(parameter.name, parameter.name + '[MAX_NR_FUNCTION_CALLS]')
+                self.file.write('    ' + temp + ';\n')
+            elif paramNoSpaces == 'constchar*' or paramNoSpaces == 'charconst*':
                 self.file.write('    char* ' + parameter.name + '[MAX_NR_FUNCTION_CALLS];\n')
             else:
                 paramType = parameter.type.replace('const', '')
@@ -321,7 +361,7 @@ class HeaderGenerator(FileGenerator):
         self.file.write('void ' + self.headerfile + '_MockTeardown(void); /* call this after every test! */\n\n')
         self.file.write('/* call these for each call you expect for a given function */')
         for mock in mockinfo:
-            prototype = '\n' + self.makePrototype(mock) + ';'
+            prototype = '\n' + self.makePrototype(mock, ';')
             self.file.write(prototype)
 
 
@@ -375,7 +415,7 @@ class SourceGenerator(FileGenerator):
         self.file.write('}')
 
     def writeExpectedCallFunction(self, mock):
-        prototype = '\n\n\n' + self.makePrototype(mock) + '\n'
+        prototype = '\n\n\n' + self.makePrototype(mock, '') + '\n'
         self.file.write(prototype)
         self.file.write('{\n')
         if self.stringParameterInFunction(mock):
@@ -447,7 +487,9 @@ class SourceGenerator(FileGenerator):
         if not self.isVoidParameter(mock.parameters):
             self.file.write('    snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Call to %s with unexpected parameter(s) in call nr %d", __FUNCTION__, ' + mock.functionName + 'Data.CallCounter+1);\n')
             for parameter in mock.parameters:
-                if parameter.type.find('*') >= 0 and parameter.type.find('const') == -1:
+                if parameter.funcptr:
+                    self.file.write('    if (' + parameter.name + ' != NULL) TEST_ASSERT_EQUAL_MESSAGE(' + mock.functionName + 'Data.' + parameter.name + '[' + mock.functionName + 'Data.CallCounter], ' + parameter.name + ', errormsg);\n')
+                elif parameter.type.find('*') >= 0 and parameter.type.find('const') == -1:
                     # output parameter: copy expected data into parameter
                     # if parameter.type.replace(' ', '') == 'char*':
                     #     self.file.write('        strncpy(' + parameter.name + ', ' + mock[0] + 'Data.' + parameter.name + '[' + mock[0] + 'Data.CallCounter], MAX_STRING_LENGTH);\n')
