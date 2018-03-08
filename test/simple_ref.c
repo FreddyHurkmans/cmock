@@ -1,15 +1,15 @@
+#include "simple_mock.h"
+#include "unity.h"
 #include <string.h>
 #include <stdlib.h>
-#include "unity.h"
-#include "simple_mock.h"
 
 #define MAX_LENGTH_ERROR_MESSAGE 100
 
-static piStruct piData;
-static fooStruct fooData;
-static barStruct barData;
-static basStruct basData;
-static constPtrsStruct constPtrsData;
+static piMockData piData;
+static fooMockData fooData;
+static barMockData barData;
+static basMockData basData;
+static constPtrsMockData constPtrsData;
 
 void simple_MockSetup(void)
 {

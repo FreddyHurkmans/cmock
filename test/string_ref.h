@@ -1,10 +1,10 @@
-#ifndef __STRING_MOCK_H
-#define __STRING_MOCK_H
+#ifndef STRING_MOCK_H
+#define STRING_MOCK_H
+
+#include "string.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "string.h"
 
 #define MAX_NR_FUNCTION_CALLS 25
 
@@ -17,7 +17,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} fakeSendStruct;
+} fakeSendMockData;
 
 typedef struct
 {
@@ -28,7 +28,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} sendStruct;
+} sendMockData;
 
 typedef struct
 {
@@ -39,14 +39,14 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} recvStruct;
+} recvMockData;
 
-void string_MockSetup(void);    /* call this before every test! */
-void string_MockTeardown(void); /* call this after every test! */
+void string_MockSetup(void);    /* call this from the Setup of your test! */
+void string_MockTeardown(void); /* call this from the Teardown of your test! */
 
 /* call these for each call you expect for a given function */
 void fakeSend_ExpectedCall(const unsigned char* character, int ReturnValue);
 void send_ExpectedCall(const char* text, int ReturnValue);
 void recv_ExpectedCall(const char* character, int ReturnValue);
 
-#endif  /* __STRING_MOCK_H */
+#endif  /* STRING_MOCK_H */

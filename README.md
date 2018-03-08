@@ -1,7 +1,7 @@
 # cMock
 
 ## Introduction
-Mock generator for C, version 0.4. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
+Mock generator for C, version 0.5. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
 
 Example: say your headerfile contains:
 
@@ -75,13 +75,13 @@ Now, let's take a look at each part of the generated header file:
  *
  ********************************************************************/
 
-#ifndef __MYFUNCS_MOCK_H
-#define __MYFUNCS_MOCK_H
+#ifndef MYFUNCS_MOCK_H
+#define MYFUNCS_MOCK_H
+
+#include "myfuncs.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "myfuncs.h"
 ```
 
 The generated file starts with a header that indicates this is a generated file; it will also tell you the name of the source file and the generation date. Then we see the obvious multiple include protection and some includes that can be required *(note: the script doesn't check if they actually are required, it just includes them)*. It also includes your original headerfile, which will guarantee you that the generated mock functions are 100% compatible with your prototypes.
@@ -101,14 +101,14 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} fooStruct;
+} fooMockData;
 
 typedef struct
 {
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} barStruct;
+} barMockData;
 
 typedef struct
 {
@@ -117,17 +117,17 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} basStruct;
+} basMockData;
 ```
 
-As our mock code needs to remember expected calls, their parameters and return values, we need some place to put all this information. In order to do this in a structured way, a struct is created for each function in your headerfile. This struct is called: `<your_function>Struct`. In here you will find an array for each parameter, an array for your return value, a counter for how often the generated function is called and a counter for how often it is expected to be called. *Please note that parameters and return types are only generated if the function in question has them!* The details about these variables are not really important for you, I just mention them so you understand how the mock works.
+As our mock code needs to remember expected calls, their parameters and return values, we need some place to put all this information. In order to do this in a structured way, a struct is created for each function in your headerfile. This struct is called: `<your_function>MockData`. In here you will find an array for each parameter, an array for your return value, a counter for how often the generated function is called and a counter for how often it is expected to be called. *Please note that parameters and return types are only generated if the function in question has them!* The details about these variables are not really important for you, I just mention them so you understand how the mock works.
 
 ```c
-void myfuncs_MockSetup(void);    /* call this before every test! */
-void myfuncs_MockTeardown(void); /* call this after every test! */
+void myfuncs_MockSetup(void);    /* call this from the Setup of your test! */
+void myfuncs_MockTeardown(void); /* call this from the Teardown of your test! */
 ```
 
-`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in [Unity](https://github.com/ThrowTheSwitch/Unity): just call them from your custom `setUp` and `tearDown` functions.
+`myfuncs_MockSetup` and `myfuncs_MockTeardown` can be considered the constructor and destructor of your generated mock module. `myfuncs_MockSetup` will initialise all structs to 0 so your tests do not depend on the previous one. I will explain what `myfuncs_MockTeardown` does in a minute, however I hope it is obvious that you need to call these functions before and after each test. Luckily this is easy to do in [Unity](https://github.com/ThrowTheSwitch/Unity): just call them from your custom `setUp` and `tearDown` functions.
 
 ```c
 /* call these for each call you expect for a given function */
@@ -169,10 +169,11 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} fooStruct;
+} fooMockData;
 
 void foo_ExpectedCall(const struct MyType* ptr, int ReturnValue);
 ```
+
 This lack of difference is easily explained: for both versions the mock needs to remember the given data. When you look in the generated code, you will easily spot the difference:
 
 ```c

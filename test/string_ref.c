@@ -1,13 +1,13 @@
+#include "string_mock.h"
+#include "unity.h"
 #include <string.h>
 #include <stdlib.h>
-#include "unity.h"
-#include "string_mock.h"
 
 #define MAX_LENGTH_ERROR_MESSAGE 100
 
-static fakeSendStruct fakeSendData;
-static sendStruct sendData;
-static recvStruct recvData;
+static fakeSendMockData fakeSendData;
+static sendMockData sendData;
+static recvMockData recvData;
 
 void string_MockSetup(void)
 {
@@ -81,6 +81,7 @@ int send(const char* text)
     snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Call to %s with unexpected parameter(s) in call nr %d", __FUNCTION__, sendData.CallCounter+1);
     TEST_ASSERT_EQUAL_STRING_MESSAGE(sendData.text[sendData.CallCounter], text, errormsg);
     free(sendData.text[sendData.CallCounter]);
+    sendData.text[sendData.CallCounter] = NULL;
     return sendData.ReturnValue[sendData.CallCounter++];
 }
 

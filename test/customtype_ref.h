@@ -1,10 +1,10 @@
-#ifndef __CUSTOMTYPE_MOCK_H
-#define __CUSTOMTYPE_MOCK_H
+#ifndef CUSTOMTYPE_MOCK_H
+#define CUSTOMTYPE_MOCK_H
+
+#include "customtype.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "customtype.h"
 
 #define MAX_NR_FUNCTION_CALLS 25
 
@@ -19,7 +19,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} fooStruct;
+} fooMockData;
 
 typedef struct
 {
@@ -31,7 +31,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} barStruct;
+} barMockData;
 
 typedef struct
 {
@@ -43,14 +43,14 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} basStruct;
+} basMockData;
 
-void customtype_MockSetup(void);    /* call this before every test! */
-void customtype_MockTeardown(void); /* call this after every test! */
+void customtype_MockSetup(void);    /* call this from the Setup of your test! */
+void customtype_MockTeardown(void); /* call this from the Teardown of your test! */
 
 /* call these for each call you expect for a given function */
 void foo_ExpectedCall(struct foo f, const struct foo *p1, const struct foo* p2, struct FOO ReturnValue);
 void bar_ExpectedCall(const BAR* p1, const BAR *p2, BAR* ReturnValue);
 void bas_ExpectedCall(myInt i, const myInt* p, myInt ReturnValue);
 
-#endif  /* __CUSTOMTYPE_MOCK_H */
+#endif  /* CUSTOMTYPE_MOCK_H */

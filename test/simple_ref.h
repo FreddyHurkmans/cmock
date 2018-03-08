@@ -1,10 +1,10 @@
-#ifndef __SIMPLE_MOCK_H
-#define __SIMPLE_MOCK_H
+#ifndef SIMPLE_MOCK_H
+#define SIMPLE_MOCK_H
+
+#include "simple.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "simple.h"
 
 #define MAX_NR_FUNCTION_CALLS 25
 
@@ -15,7 +15,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} piStruct;
+} piMockData;
 
 typedef struct
 {
@@ -26,7 +26,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} fooStruct;
+} fooMockData;
 
 typedef struct
 {
@@ -35,7 +35,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} barStruct;
+} barMockData;
 
 typedef struct
 {
@@ -48,7 +48,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} basStruct;
+} basMockData;
 
 typedef struct
 {
@@ -62,10 +62,10 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} constPtrsStruct;
+} constPtrsMockData;
 
-void simple_MockSetup(void);    /* call this before every test! */
-void simple_MockTeardown(void); /* call this after every test! */
+void simple_MockSetup(void);    /* call this from the Setup of your test! */
+void simple_MockTeardown(void); /* call this from the Teardown of your test! */
 
 /* call these for each call you expect for a given function */
 void pi_ExpectedCall(double ReturnValue);
@@ -74,4 +74,4 @@ void bar_ExpectedCall(int ReturnValue);
 void bas_ExpectedCall(uint8_t v1, int16_t v2, const int32_t* p1, uint_16_t ReturnValue);
 void constPtrs_ExpectedCall(const int* p1, const int *p2, int const* p3, int const *p4, int ReturnValue);
 
-#endif  /* __SIMPLE_MOCK_H */
+#endif  /* SIMPLE_MOCK_H */

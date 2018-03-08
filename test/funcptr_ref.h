@@ -1,10 +1,10 @@
-#ifndef __FUNCPTR_MOCK_H
-#define __FUNCPTR_MOCK_H
+#ifndef FUNCPTR_MOCK_H
+#define FUNCPTR_MOCK_H
+
+#include "funcptr.h"
 
 #include <stdbool.h>
 #include <stdint.h>
-
-#include "funcptr.h"
 
 #define MAX_NR_FUNCTION_CALLS 25
 
@@ -13,13 +13,12 @@ typedef struct
     /* parameters */
     int time[MAX_NR_FUNCTION_CALLS];
     void (*callback[MAX_NR_FUNCTION_CALLS])(int id, char c, int(*foo)(bla i));
-    int i[MAX_NR_FUNCTION_CALLS];
     /* return value */
     int ReturnValue[MAX_NR_FUNCTION_CALLS];
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} timerStruct;
+} timerMockData;
 
 typedef struct
 {
@@ -29,7 +28,7 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} timerPointerStruct;
+} timerPointerMockData;
 
 typedef struct
 {
@@ -39,14 +38,14 @@ typedef struct
     /* administration */
     int CallCounter;
     int ExpectedNrCalls;
-} timerConstPointerStruct;
+} timerConstPointerMockData;
 
-void funcptr_MockSetup(void);    /* call this before every test! */
-void funcptr_MockTeardown(void); /* call this after every test! */
+void funcptr_MockSetup(void);    /* call this from the Setup of your test! */
+void funcptr_MockTeardown(void); /* call this from the Teardown of your test! */
 
 /* call these for each call you expect for a given function */
-void timer_ExpectedCall(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int i, int ReturnValue); /* if you don't want to check function pointer(s), make it NULL */
+void timer_ExpectedCall(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int ReturnValue); /* if you don't want to check function pointer(s), make it NULL */
 void timerPointer_ExpectedCall(int time, int **(*callback)(int** p)); /* if you don't want to check function pointer(s), make it NULL */
 void timerConstPointer_ExpectedCall(int time, int **(*callback)(const int** p)); /* if you don't want to check function pointer(s), make it NULL */
 
-#endif  /* __FUNCPTR_MOCK_H */
+#endif  /* FUNCPTR_MOCK_H */

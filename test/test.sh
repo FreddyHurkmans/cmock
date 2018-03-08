@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CMOCK='../cmock.py'
+CMOCK='../src/cmock.py'
 
 REF_H="_ref.h"
 REF_C="_ref.c"

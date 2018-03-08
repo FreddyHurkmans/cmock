@@ -1,13 +1,13 @@
+#include "funcptr_mock.h"
+#include "unity.h"
 #include <string.h>
 #include <stdlib.h>
-#include "unity.h"
-#include "funcptr_mock.h"
 
 #define MAX_LENGTH_ERROR_MESSAGE 100
 
-static timerStruct timerData;
-static timerPointerStruct timerPointerData;
-static timerConstPointerStruct timerConstPointerData;
+static timerMockData timerData;
+static timerPointerMockData timerPointerData;
+static timerConstPointerMockData timerConstPointerData;
 
 void funcptr_MockSetup(void)
 {
@@ -30,7 +30,7 @@ void funcptr_MockTeardown(void)
 }
 
 
-void timer_ExpectedCall(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int i, int ReturnValue) /* if you don't want to check function pointer(s), make it NULL */
+void timer_ExpectedCall(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int ReturnValue) /* if you don't want to check function pointer(s), make it NULL */
 {
     char errormsg[MAX_LENGTH_ERROR_MESSAGE];
     snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Too many calls to %s, max number is: %d", __FUNCTION__, MAX_NR_FUNCTION_CALLS);
@@ -38,12 +38,11 @@ void timer_ExpectedCall(int time, void (*callback)(int id, char c, int(*foo)(bla
 
     timerData.time[timerData.ExpectedNrCalls] = time;
     timerData.callback[timerData.ExpectedNrCalls] = callback;
-    timerData.i[timerData.ExpectedNrCalls] = i;
     timerData.ReturnValue[timerData.ExpectedNrCalls] = ReturnValue;
     timerData.ExpectedNrCalls++;
 }
 
-int timer(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int i)
+int timer(int time, void (*callback)(int id, char c, int(*foo)(bla i)))
 {
     char errormsg[MAX_LENGTH_ERROR_MESSAGE];
 
@@ -52,8 +51,7 @@ int timer(int time, void (*callback)(int id, char c, int(*foo)(bla i)), int i)
 
     snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Call to %s with unexpected parameter(s) in call nr %d", __FUNCTION__, timerData.CallCounter+1);
     TEST_ASSERT_EQUAL_INT_MESSAGE(timerData.time[timerData.CallCounter], time, errormsg);
-    if (callback != NULL) TEST_ASSERT_EQUAL_MESSAGE(timerData.callback[timerData.CallCounter], callback, errormsg);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(timerData.i[timerData.CallCounter], i, errormsg);
+    if (callback != NULL) TEST_ASSERT_EQUAL_PTR_MESSAGE(timerData.callback[timerData.CallCounter], callback, errormsg);
     return timerData.ReturnValue[timerData.CallCounter++];
 }
 
@@ -78,7 +76,7 @@ void timerPointer(int time, int **(*callback)(int** p))
 
     snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Call to %s with unexpected parameter(s) in call nr %d", __FUNCTION__, timerPointerData.CallCounter+1);
     TEST_ASSERT_EQUAL_INT_MESSAGE(timerPointerData.time[timerPointerData.CallCounter], time, errormsg);
-    if (callback != NULL) TEST_ASSERT_EQUAL_MESSAGE(timerPointerData.callback[timerPointerData.CallCounter], callback, errormsg);
+    if (callback != NULL) TEST_ASSERT_EQUAL_PTR_MESSAGE(timerPointerData.callback[timerPointerData.CallCounter], callback, errormsg);
     timerPointerData.CallCounter++;
 }
 
@@ -103,6 +101,6 @@ void timerConstPointer(int time, int **(*callback)(const int** p))
 
     snprintf(errormsg, MAX_LENGTH_ERROR_MESSAGE, "Call to %s with unexpected parameter(s) in call nr %d", __FUNCTION__, timerConstPointerData.CallCounter+1);
     TEST_ASSERT_EQUAL_INT_MESSAGE(timerConstPointerData.time[timerConstPointerData.CallCounter], time, errormsg);
-    if (callback != NULL) TEST_ASSERT_EQUAL_MESSAGE(timerConstPointerData.callback[timerConstPointerData.CallCounter], callback, errormsg);
+    if (callback != NULL) TEST_ASSERT_EQUAL_PTR_MESSAGE(timerConstPointerData.callback[timerConstPointerData.CallCounter], callback, errormsg);
     timerConstPointerData.CallCounter++;
 }

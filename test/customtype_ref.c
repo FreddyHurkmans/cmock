@@ -1,13 +1,13 @@
+#include "customtype_mock.h"
+#include "unity.h"
 #include <string.h>
 #include <stdlib.h>
-#include "unity.h"
-#include "customtype_mock.h"
 
 #define MAX_LENGTH_ERROR_MESSAGE 100
 
-static fooStruct fooData;
-static barStruct barData;
-static basStruct basData;
+static fooMockData fooData;
+static barMockData barData;
+static basMockData basData;
 
 void customtype_MockSetup(void)
 {
