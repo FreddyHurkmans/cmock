@@ -2,9 +2,9 @@
 
 import sys
 from configuration import *
-from Prototypes import *
-from HeaderGenerator import *
-from SourceGenerator import *
+from prototype_finder import *
+from headergen import *
+from sourcegen import *
 
 DESCRIPTION = 'Mock generator for c code'
 VERSION = '0.5'
@@ -55,7 +55,7 @@ def printf(line):
 def printMockInfo(mockinfo):
     printf('FUNCTION\t\tRETURN TYPE\t\tPARAMETER LIST')
     for mock in mockinfo:
-        line = mock.functionName + '\t\t' + mock.returnType + '\t\t'
+        line = mock.function_name + '\t\t' + mock.return_type + '\t\t'
         for parameter in mock.parameters:
             line += parameter.type + ' ' + parameter.name + ', '
         printf(line[:-2])
@@ -124,10 +124,10 @@ def main():
     if headerfile == '':
         printUsageAndExit()
 
-    proto = Prototypes(headerfile)
+    proto = PrototypeFinder(headerfile)
 
-    if proto.anyPrototypesFound():
-        mockinfo = proto.getMockInfo()
+    if proto.any_prototypes_found():
+        mockinfo = proto.get_mock_info()
         printMockInfo(mockinfo)
 
         hgen = HeaderGenerator(headerfile, MaxNrFunctionCalls, VERSION)
