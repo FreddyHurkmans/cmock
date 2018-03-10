@@ -1,9 +1,9 @@
 # cMock
 
 ## Introduction
-Mock generator for C, version 0.5. cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype.
+Mock generator for C, version 0.5.
 
-Example: say your headerfile contains:
+cMock reads function prototypes from a headerfile and will automatically generate an 'expected call' function and 'mock' function for each function prototype. Example: say your headerfile contains:
 
 ```c
 int foo(double a);
@@ -18,10 +18,10 @@ int foo(double a)
 Details about these functions will be explained later on.
 
 ### Requires
-cMock requires Python and ctags to run, the generated code requires the [Unity testing framework](https://github.com/ThrowTheSwitch/Unity).
+cMock requires Python3 and ctags to run, the generated code requires the [Unity testing framework](https://github.com/ThrowTheSwitch/Unity).
 
 ### Tested on
-I tested cMock on Ubuntu 14.04 with Python 2.7.6 and ctags 5.9, however since -as far as I know- I didn't use any special Python stuff it should work just fine on other versions.
+I tested cMock on Ubuntu 16.04 with Python 3.5.2 and ctags 5.9, however since -as far as I know- I didn't use any special Python stuff it should work just fine on other versions.
 
 ctags is called with parameters -x, -u and --c-kinds=fp, so as long as your version has these options you're good to go.
 
@@ -65,15 +65,15 @@ void bas(struct MyType m);
 Now, let's take a look at each part of the generated header file:
 
 ```c
-/*********************************************************************
+/*******************************************************************************
  * generated code, please do not edit directly
- * cMock version 0.4 written by Freddy Hurkmans
+ * cMock version 0.5 written by Freddy Hurkmans
  *
  * source file    : myfuncs.h
  * filename       : myfuncs_mock.h
- * generation date: 14 Jun 2015 - 22:40:15
+ * generation date: 9 Mar 2018 - 20:00:07
  *
- ********************************************************************/
+ ******************************************************************************/
 
 #ifndef MYFUNCS_MOCK_H
 #define MYFUNCS_MOCK_H
@@ -84,7 +84,7 @@ Now, let's take a look at each part of the generated header file:
 #include <stdint.h>
 ```
 
-The generated file starts with a header that indicates this is a generated file; it will also tell you the name of the source file and the generation date. Then we see the obvious multiple include protection and some includes that can be required *(note: the script doesn't check if they actually are required, it just includes them)*. It also includes your original headerfile, which will guarantee you that the generated mock functions are 100% compatible with your prototypes.
+The generated file starts with a header that indicates this is a generated file; it will also tell you the name of the source file and the generation date. Then we see the obvious multiple include protection and it includes your original headerfile, which will guarantee you that the generated mock functions are 100% compatible with your prototypes. It also adds some includes that can be required *(note: the script doesn't check if they actually are required, it just includes them)*.
 
 ```c
 #define MAX_NR_FUNCTION_CALLS 25
@@ -135,8 +135,9 @@ void foo_ExpectedCall(char c, int ReturnValue);
 void bar_ExpectedCall(void);
 void bas_ExpectedCall(struct MyType m);
 
-#endif  /* __MYFUNCS_MOCK_H */
+#endif  /* MYFUNCS_MOCK_H */
 ```
+
 The last part of the generated header defines prototypes for the `ExpectedCall` functions. Let's assume we expect our function under test to call `foo` with parameter 12, in that case we need to inform our mock. We also tell our mock what it is to return, so let's say we want to test if our function responds correctly if `foo` returns -1:
 
 ```c
@@ -255,6 +256,7 @@ int bar(const char* text)
     ...
     TEST_ASSERT_EQUAL_STRING_MESSAGE(barData.text[barData.CallCounter], text, errormsg);
     free(barData.text[barData.CallCounter]);
+    barData.text[barData.CallCounter] = NULL;
     ...
 }
 ```
