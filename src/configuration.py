@@ -1,6 +1,11 @@
+DESCRIPTION = 'Mock generator for c code'
+VERSION = '0.5'
+AUTHOR = 'Freddy Hurkmans'
+LICENSE = 'BSD 3-Clause'
+
 # set defaults for parameters
-Verbose = False
-MaxNrFunctionCalls = '25'
+verbose = False
+max_nr_function_calls = '25'
 
 UNITY_INCLUDE = '#include "unity.h"'
 # CUSTOM_INCLUDES = ['#include "resource_detector.h"']

@@ -1,5 +1,5 @@
-from cfile_writer import *
-from protogen import *
+from cfile_writer import CFileWriter
+from protogen import PrototypeGenerator
 
 
 class HeaderGenerator(object):

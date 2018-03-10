@@ -2,14 +2,10 @@
 
 import sys
 from configuration import *
-from prototype_finder import *
-from headergen import *
-from sourcegen import *
+from prototype_finder import PrototypeFinder
+from headergen import HeaderGenerator
+from sourcegen import SourceGenerator
 
-DESCRIPTION = 'Mock generator for c code'
-VERSION = '0.5'
-AUTHOR = 'Freddy Hurkmans'
-LICENSE = 'BSD 3-Clause'
 
 # NOTES:
 # This is a rather straight forward mock generator with the following
@@ -46,13 +42,12 @@ LICENSE = 'BSD 3-Clause'
 
 # ################## PRINT METHODS ###########################################
 def printf(line):
-    # prints to stdout if Verbose is set
-    global Verbose
-    if Verbose:
+    # prints to stdout if verbose is set
+    if verbose:
         print(line)
 
 
-def printMockInfo(mockinfo):
+def print_mock_info(mockinfo):
     printf('FUNCTION\t\tRETURN TYPE\t\tPARAMETER LIST')
     for mock in mockinfo:
         line = mock.function_name + '\t\t' + mock.return_type + '\t\t'
@@ -71,18 +66,12 @@ def printerror(lineparts):
 
 
 # ################################# usage/exit ###############################
-def makeDescription():
-    global DESCRIPTION
-    global VERSION
+def make_description():
     return DESCRIPTION + ', version: ' + VERSION
 
 
-def printVersionAndExit():
-    global DESCRIPTION
-    global VERSION
-    global AUTHOR
-    global LICENSE
-    print(makeDescription())
+def print_version_and_exit():
+    print(make_description())
     print('Copyright (C) 2018 ' + AUTHOR)
     print('License: ' + LICENSE)
     print('This is free software; see the source for copying conditions.')
@@ -91,48 +80,47 @@ def printVersionAndExit():
     sys.exit()
 
 
-def printUsageAndExit():
-    global DESCRIPTION
-    global VERSION
-    printerror([makeDescription(), "\n\n"
-                'Error: wrong (number of) parameters, please use:\n',
-                sys.argv[0], ' [options] header.h\n',
-                '  options: -n#: max number of expected function calls per ' +
-                'function (default: 25)\n',
-                '           -v : verbose mode\n'
-                '     --version: version information'])
+def print_usage_and_exit():
+    printerror(
+        [make_description(), "\n\n"
+            'Error: wrong (number of) parameters, please use:\n',
+            sys.argv[0], ' [options] header.h\n',
+            '  options: -n#: max number of expected function calls per '
+            'function (default: 25)\n',
+            '           -v : verbose mode\n'
+            '     --version: version information'])
 
 
 # ############################## main function ###############################
 def main():
-    global Verbose
-    global MaxNrFunctionCalls
+    global max_nr_function_calls
+    global verbose
     headerfile = ''
 
     for arg in sys.argv[1:]:
         if arg[:1] != '-':
             headerfile = arg
         elif arg[:2] == '-n':
-            MaxNrFunctionCalls = arg[2:]
+            max_nr_function_calls = arg[2:]
         elif arg[:2] == '-v':
-            Verbose = True
+            verbose = True
         elif arg == '--version':
-            printVersionAndExit()
+            print_version_and_exit()
         else:
-            printUsageAndExit()
+            print_usage_and_exit()
 
     if headerfile == '':
-        printUsageAndExit()
+        print_usage_and_exit()
 
     proto = PrototypeFinder(headerfile)
 
     if proto.any_prototypes_found():
         mockinfo = proto.get_mock_info()
-        printMockInfo(mockinfo)
+        print_mock_info(mockinfo)
 
-        hgen = HeaderGenerator(headerfile, MaxNrFunctionCalls, VERSION)
+        hgen = HeaderGenerator(headerfile, max_nr_function_calls, VERSION)
         hgen.generate(mockinfo)
-        cgen = SourceGenerator(headerfile, MaxNrFunctionCalls, VERSION)
+        cgen = SourceGenerator(headerfile, max_nr_function_calls, VERSION)
         cgen.generate(mockinfo)
 
 
