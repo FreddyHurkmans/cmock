@@ -1,12 +1,13 @@
 from cfile_writer import CFileWriter
 from protogen import PrototypeGenerator
+from configuration import Config
+from type_determination import Type
 
 
 class HeaderGenerator(object):
-    def __init__(self, input_header, max_nr_function_calls, version):
-        self.__max_nr_function_calls = max_nr_function_calls
+    def __init__(self, input_header):
         self.__proto = PrototypeGenerator()
-        self.__file = CFileWriter(input_header, '.h', version)
+        self.__file = CFileWriter(input_header, '.h')
 
     def __del__(self):
         self.__write_footer()
@@ -44,8 +45,7 @@ class HeaderGenerator(object):
                 temp = param.original.replace(
                     param.name, param.name + '[MAX_NR_FUNCTION_CALLS]')
                 self.__file.write('    ' + temp + ';\n')
-            elif param_no_spaces == 'constchar*' or \
-                    param_no_spaces == 'charconst*':
+            elif Type.is_string(param_no_spaces):
                 self.__file.write('    char* ' + param.name +
                                   '[MAX_NR_FUNCTION_CALLS];\n')
             else:
@@ -90,7 +90,7 @@ class HeaderGenerator(object):
 
     def __write_defines(self):
         self.__file.write('#define MAX_NR_FUNCTION_CALLS ' +
-                          self.__max_nr_function_calls + '\n')
+                          Config.max_nr_function_calls + '\n')
         self.__file.write('\n')
 
     def __write_footer(self):

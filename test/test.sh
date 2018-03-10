@@ -15,28 +15,34 @@ function GenerationTest {
     path=$1$slash
     file=$path$2
     base=$path$3
+    options=$4
     error=0
 
-    $CMOCK $file
-    tail -n+11 $base$MOCK_H > $base$MOCK_H_OUT
-    tail -n+11 $base$MOCK_C > $base$MOCK_C_OUT
-    diff $base$REF_H $base$MOCK_H_OUT > $TEMPFILE
+    $CMOCK $options $file
     if [ $? -ne 0 ]
     then
-        echo "error in $base$MOCK_H_OUT:"
-        cat $TEMPFILE
-        error=1
-    fi
-    diff $base$REF_C $base$MOCK_C_OUT > $TEMPFILE
-    if [ $? -ne 0 ]
-    then
-        echo "error in $base$MOCK_C_OUT:"
-        cat $TEMPFILE
-        error=1
-    fi
-    if [ $error -eq 0 ]
-    then
-        rm $TEMPFILE $base$MOCK_H $base$MOCK_C $base$MOCK_H_OUT $base$MOCK_C_OUT
+        >&2 echo -e "Mock generation failed for $file, used options: '$options'\n\n"
+    else
+        tail -n+11 $base$MOCK_H > $base$MOCK_H_OUT
+        tail -n+11 $base$MOCK_C > $base$MOCK_C_OUT
+        diff $base$REF_H $base$MOCK_H_OUT > $TEMPFILE
+        if [ $? -ne 0 ]
+        then
+            echo "error in $base$MOCK_H_OUT:"
+            cat $TEMPFILE
+            error=1
+        fi
+        diff $base$REF_C $base$MOCK_C_OUT > $TEMPFILE
+        if [ $? -ne 0 ]
+        then
+            echo "error in $base$MOCK_C_OUT:"
+            cat $TEMPFILE
+            error=1
+        fi
+        if [ $error -eq 0 ]
+        then
+            rm $TEMPFILE $base$MOCK_H $base$MOCK_C $base$MOCK_H_OUT $base$MOCK_C_OUT
+        fi
     fi
 }
 
@@ -49,6 +55,11 @@ do
         path=$(dirname $file)
         file=$(basename $file)
         base=$(basename $file .h)
-        GenerationTest $path $file $base
+        cmockOptions=""
+        if [ "$file" == "string2.h" ]
+        then
+            cmockOptions="-charstarIsInputString"
+        fi
+        GenerationTest $path $file $base $cmockOptions
     fi
 done

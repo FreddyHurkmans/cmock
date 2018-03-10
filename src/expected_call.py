@@ -1,3 +1,6 @@
+from type_determination import Type
+
+
 class ExpectedCallGenerator(object):
     def __init__(self, file, proto, mock):
         self.__file = file
@@ -29,17 +32,17 @@ class ExpectedCallGenerator(object):
     def __is_string_parameter_in_function(self):
         for parameter in self.__mock.parameters:
             param_no_spaces = parameter.type.replace(' ', '')
-            if param_no_spaces in ['constchar*', 'charconst*']:
+            if Type.is_string(param_no_spaces):
                 return True
         return False
 
     def __write_null_tests_to_sourcefile(self):
         for parameter in self.__mock.parameters:
-            if parameter.type.find('*') >= 0:
+            if Type.is_pointer(parameter.type):
                 self.__file.write('    TEST_ASSERT_NOT_NULL_MESSAGE(' +
                                   parameter.name +
                                   ', "parameter should not be NULL");\n')
-        if self.__mock.return_type.find('*') >= 0:
+        if Type.is_pointer(self.__mock.return_type):
             self.__file.write('    /* no TEST_ASSERT_NOT_NULL for ReturnValu' +
                               'e, you might want to return NULL! */\n')
 
@@ -50,8 +53,7 @@ class ExpectedCallGenerator(object):
             param_no_spaces = parameter.type.replace(' ', '')
             param_no_const = \
                 self.__proto.remove_const_from_type(parameter.type)
-            if param_no_spaces == 'constchar*' or \
-                    param_no_spaces == 'charconst*':
+            if Type.is_string(param_no_spaces):
                 self.__file.write(
                     '    length = strlen(' + parameter.name + ');\n')
                 self.__file.write(
@@ -61,15 +63,15 @@ class ExpectedCallGenerator(object):
                     ', "could not allocate' + ' memory");\n')
                 self.__file.write(
                     '    strcpy(' + nr_calls + ', ' + parameter.name + ');\n')
-            elif param_no_const.find('*') >= 0:
+            elif Type.is_pointer(param_no_const):
                 self.__file.write(
                     '    ' + nr_calls + ' = *' + parameter.name + ';\n')
-            elif param_no_const.strip() != 'void':
+            elif not Type.is_void(param_no_const):
                 self.__file.write(
                     '    ' + nr_calls + ' = ' + parameter.name + ';\n')
 
     def __write_return_type_copy_lines_to_sourcefile(self):
-        if self.__mock.return_type != 'void':
+        if not Type.is_void(self.__mock.return_type):
             self.__file.write('    ' + self.__mock.function_name +
                               'Data.ReturnValue[' + self.__mock.function_name +
                               'Data.ExpectedNrCalls] = ReturnValue;\n')

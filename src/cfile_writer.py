@@ -1,10 +1,10 @@
+from configuration import Config
 from time import strftime
 
 
 class CFileWriter(object):
-    def __init__(self, input_header, extension, version):
+    def __init__(self, input_header, extension):
         self.input_header = self.__get_basename(input_header)
-        self.__version = version
         self.basename = self.__strip_extension(self.input_header)
         self.filename = self.create_mock_name(extension)
         self.__fd = open(self.filename, 'w')
@@ -34,7 +34,7 @@ class CFileWriter(object):
     def __write_generic_header(self):
         self.__fd.write('/' + '*' * 79 + '\n')
         self.__fd.write(' * generated code, please do not edit directly\n')
-        self.__fd.write(' * cMock version ' + self.__version +
+        self.__fd.write(' * cMock version ' + Config.VERSION +
                         ' written by Freddy Hurkmans\n')
         self.__fd.write(' *\n')
         self.__fd.write(' * source file    : ' + self.input_header + '\n')

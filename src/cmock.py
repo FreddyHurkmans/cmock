@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import sys
-from configuration import *
+from configuration import Config
 from prototype_finder import PrototypeFinder
 from headergen import HeaderGenerator
 from sourcegen import SourceGenerator
@@ -43,7 +43,7 @@ from sourcegen import SourceGenerator
 # ################## PRINT METHODS ###########################################
 def printf(line):
     # prints to stdout if verbose is set
-    if verbose:
+    if Config.verbose:
         print(line)
 
 
@@ -62,18 +62,18 @@ def printerror(lineparts):
     for part in lineparts:
         sys.stderr.write(str(part))
     sys.stderr.write('\n\n')
-    sys.exit()
+    sys.exit(1)
 
 
 # ################################# usage/exit ###############################
 def make_description():
-    return DESCRIPTION + ', version: ' + VERSION
+    return Config.DESCRIPTION + ', version: ' + Config.VERSION
 
 
 def print_version_and_exit():
     print(make_description())
-    print('Copyright (C) 2018 ' + AUTHOR)
-    print('License: ' + LICENSE)
+    print('Copyright (C) 2018 ' + Config.AUTHOR)
+    print('License: ' + Config.LICENSE)
     print('This is free software; see the source for copying conditions.')
     print('There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR')
     print('A PARTICULAR PURPOSE.\n')
@@ -85,25 +85,26 @@ def print_usage_and_exit():
         [make_description(), "\n\n"
             'Error: wrong (number of) parameters, please use:\n',
             sys.argv[0], ' [options] header.h\n',
-            '  options: -n#: max number of expected function calls per '
+            '     options: -n#: max number of expected function calls per '
             'function (default: 25)\n',
-            '           -v : verbose mode\n'
-            '     --version: version information'])
+            '              -v : verbose mode\n'
+            '-charstarIsInputString: treat char* parameters as input string\n'
+            '        --version: version information'])
 
 
 # ############################## main function ###############################
 def main():
-    global max_nr_function_calls
-    global verbose
     headerfile = ''
 
     for arg in sys.argv[1:]:
         if arg[:1] != '-':
             headerfile = arg
         elif arg[:2] == '-n':
-            max_nr_function_calls = arg[2:]
+            Config.max_nr_function_calls = arg[2:]
         elif arg[:2] == '-v':
-            verbose = True
+            Config.verbose = True
+        elif arg == '-charstarIsInputString':
+            Config.charstar_is_input_string = True
         elif arg == '--version':
             print_version_and_exit()
         else:
@@ -118,9 +119,9 @@ def main():
         mockinfo = proto.get_mock_info()
         print_mock_info(mockinfo)
 
-        hgen = HeaderGenerator(headerfile, max_nr_function_calls, VERSION)
+        hgen = HeaderGenerator(headerfile)
         hgen.generate(mockinfo)
-        cgen = SourceGenerator(headerfile, max_nr_function_calls, VERSION)
+        cgen = SourceGenerator(headerfile)
         cgen.generate(mockinfo)
 
 

@@ -1,3 +1,6 @@
+from type_determination import Type
+
+
 class PrototypeGenerator(object):
     def expected_call_prototype(self, mock, line_ending):
         prototype = 'void ' + mock.function_name + '_ExpectedCall('
@@ -8,15 +11,18 @@ class PrototypeGenerator(object):
             prototype += 'void'
         elif (not self.is_void_parameter(mock.parameters)):
             for parameter in mock.parameters:
+                param = parameter.original
                 if parameter.funcptr:
                     funcptr_parameter_found = True
-                param = parameter.original
-                if (not parameter.funcptr) and (param.find('*') >= 0) and \
-                        (param.find('const') < 0):
+                elif Type.is_output_pointer(param):
                     param = 'const ' + param
+                else:
+                    # do nothing
+                    pass
+
                 prototype += param + ', '
         # return value
-        if mock.return_type != 'void':
+        if not Type.is_void(mock.return_type):
             prototype += self.remove_const_from_type(
                 mock.return_type) + ' ReturnValue'
         # strip last ', '
@@ -36,4 +42,4 @@ class PrototypeGenerator(object):
         return ctype
 
     def is_void_parameter(self, parameterlist):
-        return (len(parameterlist) == 1) and (parameterlist[0].type == 'void')
+        return len(parameterlist) == 1 and Type.is_void(parameterlist[0].type)

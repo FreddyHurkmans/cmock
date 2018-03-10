@@ -1,5 +1,5 @@
 import subprocess
-from configuration import CTAGS_EXECUTABLE
+from configuration import Config
 
 
 class MockInfoStruct:
@@ -57,7 +57,8 @@ class PrototypeFinder(object):
 
     def __find_prototypes(self):
         self.__ctags_output = str(subprocess.check_output(
-            [CTAGS_EXECUTABLE, '-x', '-u', '--c-kinds=fp', self.__headerfile]))
+            [Config.CTAGS_EXECUTABLE, '-x', '-u', '--c-kinds=fp',
+                self.__headerfile]))
         self.__ctags_output = self.__ctags_output.split('\\n')
         self.__ctags_output = self.__ctags_output[:-1]
 

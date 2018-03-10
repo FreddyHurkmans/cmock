@@ -209,12 +209,12 @@ int foo(const struct MyType* ptr)
 In the case where `ptr` is used as input parameter, you will note the function will check if the given data is the same as the expected data.
 
 ### Arrays
-As noted in the 'limitations' paragraph, cMock currently does not support arrays. Most important reason is that c doesn't make it easy to detect the intention of a certain parameter. Is `int* bar` a pointer to a single integer, or is it in fact a pointer to the first value of an array? You cannot tell. In a **later version** I might decide that an array **must** be declared as: `int bar[]`. I am interested to your opinion on this, so if you have an idea that might help here, please let me know.
+As noted in the 'limitations' paragraph, cMock currently does not support arrays. Most important reason is that c doesn't make it easy to detect the intention of a certain parameter. Is `int* bar` a pointer to a single integer, or is it in fact a pointer to the first value of an array? You cannot tell. In a **later version** I might decide that an array **must** be declared as: `int bar[]`. I am interested to your opinion on this, so if you have an idea that might help me, please let me know.
 
 ### Strings
-Strings in c are, as you know, char arrays. Arrays are not supported, strings however are a bit supported. If you have a function that has a `const char*` parameter, this is considered to be an input type string, as normally it doesn't make sense to use a pointer type to feed a character into a function. If your function has a `char*` parameter however, it can mean both an output character and an output string. As I have no way of knowing which it is, the script considers this to be an output type character.
+Strings in c are, as you know, char arrays. Arrays are not supported, strings however are a bit supported. If you have a function that has a `const char*` parameter, this is considered to be an input type string, as normally it doesn't make sense to use a pointer type to feed a character into a function. If your function has a `char*` parameter however, it can mean both an output character and an output string. As I have no way of knowing which it is, by default the script considers this to be an output type character (this is configurable, please read on).
 
-So with the following prototypes:
+So by default, with the following prototypes:
 
 ```c
 int foo(char* character);
@@ -260,6 +260,13 @@ int bar(const char* text)
     ...
 }
 ```
+If you use commandline option `-charstarIsInputString`, `char*` parameters will be treated as input string and thus will generate the same code as `const char*` parameters. Thus the following prototypes:
+
+```c
+int bar(char* text);
+int bar(const char* text);
+```
+will generate exactly the same code (see examples of bar above).
 
 ### Function pointers
 As from version 0.4 function pointers are supported. However, in `C` you basically have 2 ways of implementing a function that takes a function pointer as a parameter:

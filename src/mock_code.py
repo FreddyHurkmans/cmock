@@ -1,4 +1,5 @@
-from configuration import CTYPE_TO_UNITY_ASSERT_MACRO
+from configuration import Config
+from type_determination import Type
 
 
 class MockCodeGenerator(object):
@@ -39,51 +40,47 @@ class MockCodeGenerator(object):
             for param in self.__mock.parameters:
                 callCount = self.__mock.function_name + 'Data.' + param.name +\
                     '[' + self.__mock.function_name + 'Data.CallCounter]'
+                param_no_spaces = param.type.replace(' ', '')
                 if param.funcptr:
                     self.__file.write(
                         '    if (' + param.name + ' != NULL)' + ' TEST_' +
                         'ASSERT_EQUAL_PTR_MESSAGE(' + callCount + ', ' +
                         param.name + ', errormsg);\n')
-                elif param.type.find('*') >= 0 and \
-                        param.type.find('const') == -1:
+                elif Type.is_string(param_no_spaces):
+                    self.__file.write(
+                        '    TEST_ASSERT_EQUAL_STRING_MESSAGE(' +
+                        callCount + ', ' + param.name + ', errormsg);\n')
+                    self.__file.write('    free(' + callCount + ');\n')
+                    self.__file.write('    ' + callCount + ' = NULL;\n')
+                elif Type.is_output_pointer(param.type):
                     # output parameter: copy expected data into param
                     self.__file.write(
                         '    *' + param.name + ' = ' + callCount + ';\n')
-                else:
-                    # input parameter: check if expected data is correct
-                    param_no_spaces = param.type.replace(' ', '')
-                    if param_no_spaces == 'constchar*' or \
-                            param_no_spaces == 'charconst*':
+                elif Type.is_pointer(param.type):
+                    type_without_const_or_ptr = param.type.replace(
+                        'const', '').replace('*', '').strip()
+                    unityTesttype = self.__find_unity_test_type(
+                        type_without_const_or_ptr)
+                    if unityTesttype is None:
                         self.__file.write(
-                            '    TEST_ASSERT_EQUAL_STRING_MESSAGE(' +
-                            callCount + ', ' + param.name + ', errormsg);\n')
-                        self.__file.write('    free(' + callCount + ');\n')
-                        self.__file.write('    ' + callCount + ' = NULL;\n')
-                    elif param.type.find('*') >= 0:
-                        type_without_const_or_ptr = param.type.replace(
-                            'const', '').replace('*', '').strip()
-                        unityTesttype = self.__find_unity_test_type(
-                            type_without_const_or_ptr)
-                        if unityTesttype is None:
-                            self.__file.write(
-                                '    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&(' +
-                                callCount + '), ' + param.name + ', sizeof(*' +
-                                param.name + '), errormsg);\n')
-                        else:
-                            self.__file.write(
-                                '    ' + unityTesttype + '(' + callCount +
-                                ', *' + param.name + ', errormsg);\n')
+                            '    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&(' +
+                            callCount + '), ' + param.name + ', sizeof(*' +
+                            param.name + '), errormsg);\n')
                     else:
-                        unityTesttype = self.__find_unity_test_type(param.type)
-                        if unityTesttype is None:
-                            self.__file.write(
-                                '    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&(' +
-                                callCount + '), &' + param.name + ', sizeof(' +
-                                param.name + '), errormsg);\n')
-                        else:
-                            self.__file.write(
-                                '    ' + unityTesttype + '(' + callCount +
-                                ', ' + param.name + ', errormsg);\n')
+                        self.__file.write(
+                            '    ' + unityTesttype + '(' + callCount +
+                            ', *' + param.name + ', errormsg);\n')
+                else:
+                    unityTesttype = self.__find_unity_test_type(param.type)
+                    if unityTesttype is None:
+                        self.__file.write(
+                            '    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(&(' +
+                            callCount + '), &' + param.name + ', sizeof(' +
+                            param.name + '), errormsg);\n')
+                    else:
+                        self.__file.write(
+                            '    ' + unityTesttype + '(' + callCount +
+                            ', ' + param.name + ', errormsg);\n')
 
     def __make_mock_prototype(self):
         prototype = self.__mock.return_type + ' ' + \
@@ -97,7 +94,7 @@ class MockCodeGenerator(object):
         return prototype
 
     def __find_unity_test_type(self, paramType):
-        for ctype in CTYPE_TO_UNITY_ASSERT_MACRO:
+        for ctype in Config.CTYPE_TO_UNITY_ASSERT_MACRO:
             if ctype[0] == paramType:
                 return ctype[1]
         return None

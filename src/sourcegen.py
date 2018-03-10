@@ -2,15 +2,13 @@ from cfile_writer import CFileWriter
 from expected_call import ExpectedCallGenerator
 from mock_code import MockCodeGenerator
 from protogen import PrototypeGenerator
-from configuration import UNITY_INCLUDE
-from configuration import CUSTOM_INCLUDES
+from configuration import Config
 
 
 class SourceGenerator(object):
-    def __init__(self, input_header, max_nr_function_calls, version):
-        self.__max_nr_function_calls = max_nr_function_calls
+    def __init__(self, input_header):
         self.__proto = PrototypeGenerator()
-        self.__file = CFileWriter(input_header, '.c', version)
+        self.__file = CFileWriter(input_header, '.c')
 
     def generate(self, mockinfo):
         self.__write_includes_to_sourcefile()
@@ -24,8 +22,8 @@ class SourceGenerator(object):
     def __write_includes_to_sourcefile(self):
         self.__file.write(
             '#include "' + self.__file.create_mock_name('.h') + '"\n')
-        self.__file.write(UNITY_INCLUDE + '\n')
-        for custom_include in CUSTOM_INCLUDES:
+        self.__file.write(Config.UNITY_INCLUDE + '\n')
+        for custom_include in Config.CUSTOM_INCLUDES:
             self.__file.write(custom_include + '\n')
         self.__file.write('#include <string.h>\n')
         self.__file.write('#include <stdlib.h>\n')
