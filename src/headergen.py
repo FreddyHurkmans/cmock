@@ -36,7 +36,7 @@ class HeaderGenerator(object):
             self.__file.write('    /* administration */\n')
             self.__file.write('    int CallCounter;\n')
             self.__file.write('    int ExpectedNrCalls;\n')
-            self.__file.write('} ' + mock.function_name + 'MockData;\n\n')
+            self.__file.write('} ' + mock.function_name + '_MockData;\n\n')
 
     def __write_parameter_info_to_struct(self, param):
         if param.type.strip() != 'void':
