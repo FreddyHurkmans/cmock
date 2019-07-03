@@ -38,7 +38,7 @@ class PrototypeFinder(object):
             prototype = prototype[prototype.find(self.__headerfile) +
                                   len(self.__headerfile) + 1:].strip()
             prototype = self.__remove_extern_keyword(prototype)
-            left_part = prototype[:prototype.find('(')]
+            left_part = prototype[:prototype.find('(')].strip()
 
             # todo: move this to MockInfo class
             mock = MockInfoStruct()
