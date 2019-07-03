@@ -35,7 +35,7 @@ class SourceGenerator(object):
     def __write_global_vars_to_sourcefile(self, mockinfo):
         for mock in mockinfo:
             self.__file.write(
-                'static ' + mock.function_name + 'MockData ' +
+                'static ' + mock.function_name + '_MockData ' +
                 mock.function_name + 'Data;\n')
         self.__file.write('\n')
 
