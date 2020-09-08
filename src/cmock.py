@@ -123,7 +123,8 @@ def main():
         hgen.generate(mockinfo)
         cgen = SourceGenerator(headerfile)
         cgen.generate(mockinfo)
-
+    else:
+        print('No prototype found\n')
 
 if __name__ == '__main__':
     sys.exit(main())
